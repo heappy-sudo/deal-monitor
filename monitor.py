@@ -35,9 +35,28 @@ def send_telegram_notification(listing: Listing, task: SearchTask):
         print(f"Errore invio Telegram: {e}")
 
 from datetime import datetime, timedelta
+import os
+
+LOG_FILE = "bot_logs.txt"
+
+def bot_log(msg: str):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    line = f"[{timestamp}] {msg}\n"
+    print(line.strip())
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line)
+        # Mantieni solo le ultime 200 righe per non appesantire
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        if len(lines) > 200:
+            with open(LOG_FILE, "w", encoding="utf-8") as f:
+                f.writelines(lines[-100:])
+    except Exception:
+        pass
 
 def run_monitoring_cycle(force: bool = False):
-    print(f"Inizio ciclo di monitoraggio... (Forzato: {force})")
+    bot_log(f"🏁 Inizio ciclo di monitoraggio... (Forzato: {force})")
     active_searches = database.get_active_searches()
     
     scrapers_map = {
@@ -54,10 +73,9 @@ def run_monitoring_cycle(force: bool = False):
             try:
                 last_checked_dt = datetime.strptime(task.last_checked, "%Y-%m-%d %H:%M:%S")
                 if now < last_checked_dt + timedelta(minutes=task.check_interval):
-                    # Salta, non è ancora il momento di ricontrollare questa ricerca
                     continue
             except ValueError:
-                pass # Formato data errato, eseguiamo comunque
+                pass
                 
         total_new_deals_for_task = 0
         platforms = task.platforms.split(',')
@@ -67,29 +85,30 @@ def run_monitoring_cycle(force: bool = False):
             if not scraper:
                 continue
                 
-            print(f"\n⏳ [DEBUG] Avvio ricerca '{task.keyword}' su {plat.upper()}...")
+            bot_log(f"⏳ Cerco '{task.keyword}' su {plat.upper()}...")
             try:
                 results = scraper.search(task)
-                print(f"✅ [DEBUG {plat.upper()}] Estratti {len(results)} annunci validi (che rispettano il filtro di prezzo).")
+                bot_log(f"✅ [{plat.upper()}] Trovati {len(results)} annunci validi per prezzo.")
                 
                 new_deals = 0
                 for listing in results:
                     if not database.is_listing_seen(listing.id):
-                        # Nuovo annuncio!
                         send_telegram_notification(listing, task)
                         database.mark_listing_seen(listing.id, listing.platform)
                         new_deals += 1
                         
                 total_new_deals_for_task += new_deals
-                print(f"📤 [DEBUG {plat.upper()}] Trovati {new_deals} nuovi deal non ancora visti. (Notifiche inviate)")
+                if new_deals > 0:
+                    bot_log(f"📤 [{plat.upper()}] Inviate {new_deals} nuove notifiche su Telegram.")
+                else:
+                    bot_log(f"💤 [{plat.upper()}] Nessun deal nuovo da inviare.")
             except Exception as e:
-                print(f"❌ [DEBUG {plat.upper()}] Errore durante lo scraping: {e}")
+                bot_log(f"❌ [{plat.upper()}] Errore durante lo scraping: {e}")
                 
-        # Alla fine delle piattaforme per questo task, aggiorniamo il contatore e l'orario
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         database.increment_search_stats(task.id, total_new_deals_for_task, now_str)
                     
-    print("\n🏁 [DEBUG] Ciclo completato.\n" + "-"*40)
+    bot_log("💤 Ciclo completato.")
 
 if __name__ == "__main__":
     database.init_db()

@@ -61,7 +61,7 @@ def main():
     st.divider()
     
     # Layout a schede (Tabs) per un'interfaccia più pulita
-    tab1, tab2 = st.tabs(["📋 Le tue Ricerche", "➕ Aggiungi Nuova"])
+    tab1, tab2, tab3 = st.tabs(["📋 Le tue Ricerche", "➕ Aggiungi Nuova", "📝 Log del Bot"])
     
     with tab1:
         st.subheader("Gestione Ricerche")
@@ -115,6 +115,29 @@ def main():
                     st.rerun()
                 else:
                     st.error("Compila tutti i campi.")
+
+    with tab3:
+        st.subheader("Console del Bot in Background")
+        c1, c2 = st.columns([4, 1])
+        with c1:
+            st.write("Qui vedi in tempo reale le operazioni del bot e gli eventuali annunci scartati o notificati.")
+        with c2:
+            if st.button("🔄 Ricarica Log", use_container_width=True):
+                st.rerun()
+            if st.button("🗑️ Svuota", use_container_width=True):
+                if os.path.exists("bot_logs.txt"):
+                    os.remove("bot_logs.txt")
+                st.rerun()
+                
+        if os.path.exists("bot_logs.txt"):
+            with open("bot_logs.txt", "r", encoding="utf-8") as f:
+                logs = f.read()
+            if logs.strip():
+                st.code(logs, language="plaintext")
+            else:
+                st.info("Nessun log disponibile.")
+        else:
+            st.info("Nessun log disponibile. Premi 'Forza Controllo' per generare i primi log!")
 
 if __name__ == "__main__":
 
