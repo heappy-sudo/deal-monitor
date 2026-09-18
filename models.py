@@ -20,3 +20,5 @@ class SearchTask(BaseModel):
     active: bool = True
     run_count: int = 0
     results_found: int = 0
+    check_interval: int = 5
+    last_checked: Optional[str] = None

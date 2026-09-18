@@ -15,7 +15,7 @@ def start_background_monitor():
         while True:
             try:
                 run_monitoring_cycle()
-                time.sleep(300)
+                time.sleep(60) # Il ciclo principale ora gira ogni 60 secondi (gestisce il timing internamente)
             except Exception as e:
                 print(f"Monitor error: {e}")
                 time.sleep(60)
@@ -45,10 +45,18 @@ def main():
     active_searches = database.get_active_searches()
     
     # Metriche riassuntive
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Ricerche Attive", len(active_searches))
-    col2.metric("Piattaforme Supportate", 2) # eBay, Subito
+    col2.metric("Piattaforme Supportate", 4)
     col3.metric("Stato Bot", "🟢 Online")
+    with col4:
+        st.write("")
+        if st.button("🔄 Forza Controllo Ora", use_container_width=True):
+            with st.spinner("Ricerca forzata in corso... (guarda i log)"):
+                run_monitoring_cycle(force=True)
+            st.success("Controllo completato!")
+            time.sleep(1)
+            st.rerun()
     
     st.divider()
     
@@ -61,7 +69,7 @@ def main():
             st.info("Non hai ancora nessuna ricerca attiva. Vai nella scheda 'Aggiungi Nuova'!")
         else:
             st.write("Modifica i valori direttamente nella tabella e spunta la casella per eliminare, poi clicca Salva.")
-            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms, "Cicli": s.run_count, "Annunci Trovati": s.results_found, "Elimina 🗑️": False} for s in active_searches]
+            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Intervallo (min)": s.check_interval, "Piattaforme": s.platforms, "Cicli": s.run_count, "Annunci Trovati": s.results_found, "Ultimo Controllo": s.last_checked, "Elimina 🗑️": False} for s in active_searches]
             
             edited_data = st.data_editor(
                 table_data, 
@@ -71,8 +79,10 @@ def main():
                     "ID": None, # Nascondiamo l'ID perché non serve all'utente
                     "Target (€)": st.column_config.NumberColumn(min_value=1.0, step=1.0),
                     "Tolleranza (%)": st.column_config.NumberColumn(min_value=1, max_value=50, step=1),
+                    "Intervallo (min)": st.column_config.NumberColumn("Intervallo (min)", min_value=1, step=1, help="Ogni quanti minuti controllare"),
                     "Cicli": st.column_config.NumberColumn("Cicli", disabled=True, help="Quante volte il bot ha eseguito la ricerca"),
-                    "Annunci Trovati": st.column_config.NumberColumn("Annunci Trovati", disabled=True, help="Totale annunci inviati per questa ricerca")
+                    "Annunci Trovati": st.column_config.NumberColumn("Annunci Trovati", disabled=True, help="Totale annunci inviati per questa ricerca"),
+                    "Ultimo Controllo": st.column_config.TextColumn("Ultimo Controllo", disabled=True)
                 }
             )
             
@@ -81,7 +91,7 @@ def main():
                     if row["Elimina 🗑️"]:
                         database.delete_search(row["ID"])
                     else:
-                        database.update_search(row["ID"], row["Target (€)"], row["Tolleranza (%)"], row["Piattaforme"])
+                        database.update_search(row["ID"], row["Target (€)"], row["Tolleranza (%)"], row["Piattaforme"], row["Intervallo (min)"])
                 st.success("Modifiche salvate con successo!")
                 time.sleep(1)
                 st.rerun()
@@ -93,13 +103,14 @@ def main():
             with c1:
                 keyword = st.text_input("Parola Chiave", placeholder="es. iPhone 15 Pro")
                 target_price = st.number_input("Prezzo Target (€)", min_value=1.0, value=500.0, step=10.0)
+                interval = st.number_input("Ogni quanti minuti controllare?", min_value=1, value=5, step=1)
             with c2:
                 tolerance = st.slider("Tolleranza / Variazione (%)", 1, 50, 20)
                 platforms = st.multiselect("Piattaforme", ["ebay", "subito", "vinted", "wallapop"], default=["ebay", "subito"])
                 
             if st.form_submit_button("🚀 Avvia Ricerca", type="primary"):
                 if keyword and platforms:
-                    database.add_search(keyword, target_price, float(tolerance), ",".join(platforms))
+                    database.add_search(keyword, target_price, float(tolerance), ",".join(platforms), int(interval))
                     st.success("Ricerca aggiunta! Il bot è già al lavoro in background.")
                     st.rerun()
                 else:

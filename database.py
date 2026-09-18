@@ -26,6 +26,14 @@ def init_db():
         c.execute('ALTER TABLE searches ADD COLUMN results_found INTEGER DEFAULT 0')
     except sqlite3.OperationalError:
         pass
+    try:
+        c.execute('ALTER TABLE searches ADD COLUMN check_interval INTEGER DEFAULT 5')
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute('ALTER TABLE searches ADD COLUMN last_checked TEXT')
+    except sqlite3.OperationalError:
+        pass
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS seen_listings (
@@ -37,28 +45,33 @@ def init_db():
     conn.commit()
     conn.close()
 
-def add_search(keyword: str, target_price: float, tolerance: float, platforms: str):
+def add_search(keyword: str, target_price: float, tolerance: float, platforms: str, check_interval: int = 5):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('INSERT INTO searches (keyword, target_price, tolerance_percent, platforms) VALUES (?, ?, ?, ?)',
-              (keyword, target_price, tolerance, platforms))
+    c.execute('INSERT INTO searches (keyword, target_price, tolerance_percent, platforms, check_interval) VALUES (?, ?, ?, ?, ?)',
+              (keyword, target_price, tolerance, platforms, check_interval))
     conn.commit()
     conn.close()
 
 def get_active_searches() -> List[SearchTask]:
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # Aggiungiamo run_count e results_found (potrebbero essere NULL per le ricerche vecchie)
-    c.execute('SELECT id, keyword, target_price, tolerance_percent, platforms, active, COALESCE(run_count, 0), COALESCE(results_found, 0) FROM searches WHERE active=1')
+    # Aggiungiamo tutte le colonne
+    c.execute('SELECT id, keyword, target_price, tolerance_percent, platforms, active, COALESCE(run_count, 0), COALESCE(results_found, 0), COALESCE(check_interval, 5), last_checked FROM searches WHERE active=1')
     rows = c.fetchall()
     conn.close()
     
-    return [SearchTask(id=r[0], keyword=r[1], target_price=r[2], tolerance_percent=r[3], platforms=r[4], active=bool(r[5]), run_count=r[6], results_found=r[7]) for r in rows]
+    return [SearchTask(
+        id=r[0], keyword=r[1], target_price=r[2], tolerance_percent=r[3], 
+        platforms=r[4], active=bool(r[5]), run_count=r[6], results_found=r[7],
+        check_interval=r[8], last_checked=r[9]
+    ) for r in rows]
 
-def increment_search_stats(search_id: int, new_results: int):
+def increment_search_stats(search_id: int, new_results: int, last_checked_str: str):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('UPDATE searches SET run_count = COALESCE(run_count, 0) + 1, results_found = COALESCE(results_found, 0) + ? WHERE id=?', (new_results, search_id))
+    c.execute('UPDATE searches SET run_count = COALESCE(run_count, 0) + 1, results_found = COALESCE(results_found, 0) + ?, last_checked = ? WHERE id=?', 
+              (new_results, last_checked_str, search_id))
     conn.commit()
     conn.close()
 
@@ -87,10 +100,10 @@ def delete_search(search_id: int):
     conn.commit()
     conn.close()
 
-def update_search(search_id: int, target_price: float, tolerance: float, platforms: str):
+def update_search(search_id: int, target_price: float, tolerance: float, platforms: str, check_interval: int):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('UPDATE searches SET target_price=?, tolerance_percent=?, platforms=? WHERE id=?', 
-              (target_price, tolerance, platforms, search_id))
+    c.execute('UPDATE searches SET target_price=?, tolerance_percent=?, platforms=?, check_interval=? WHERE id=?', 
+              (target_price, tolerance, platforms, check_interval, search_id))
     conn.commit()
     conn.close()

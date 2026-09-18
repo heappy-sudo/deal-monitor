@@ -34,8 +34,10 @@ def send_telegram_notification(listing: Listing, task: SearchTask):
     except Exception as e:
         print(f"Errore invio Telegram: {e}")
 
-def run_monitoring_cycle():
-    print("Inizio ciclo di monitoraggio...")
+from datetime import datetime, timedelta
+
+def run_monitoring_cycle(force: bool = False):
+    print(f"Inizio ciclo di monitoraggio... (Forzato: {force})")
     active_searches = database.get_active_searches()
     
     scrapers_map = {
@@ -45,7 +47,18 @@ def run_monitoring_cycle():
         "wallapop": WallapopScraper()
     }
     
+    now = datetime.now()
+    
     for task in active_searches:
+        if not force and task.last_checked:
+            try:
+                last_checked_dt = datetime.strptime(task.last_checked, "%Y-%m-%d %H:%M:%S")
+                if now < last_checked_dt + timedelta(minutes=task.check_interval):
+                    # Salta, non è ancora il momento di ricontrollare questa ricerca
+                    continue
+            except ValueError:
+                pass # Formato data errato, eseguiamo comunque
+                
         total_new_deals_for_task = 0
         platforms = task.platforms.split(',')
         
@@ -72,10 +85,11 @@ def run_monitoring_cycle():
             except Exception as e:
                 print(f"❌ [DEBUG {plat.upper()}] Errore durante lo scraping: {e}")
                 
-        # Alla fine delle piattaforme per questo task, aggiorniamo il contatore
-        database.increment_search_stats(task.id, total_new_deals_for_task)
+        # Alla fine delle piattaforme per questo task, aggiorniamo il contatore e l'orario
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        database.increment_search_stats(task.id, total_new_deals_for_task, now_str)
                     
-    print("\n🏁 [DEBUG] Ciclo completato. Attesa 5 minuti...\n" + "-"*40)
+    print("\n🏁 [DEBUG] Ciclo completato.\n" + "-"*40)
 
 if __name__ == "__main__":
     database.init_db()
