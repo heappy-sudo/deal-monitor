@@ -3,7 +3,7 @@ import database
 import threading
 import time
 from models import SearchTask
-from monitor import run_monitoring_cycle
+from monitor import run_monitoring_cycle, bot_log
 import os
 
 @st.cache_resource
@@ -12,12 +12,13 @@ def start_background_monitor():
     os.system("playwright install chromium")
     
     def loop():
+        bot_log("🟢 [SYSTEM] Thread di background avviato con successo!")
         while True:
             try:
-                run_monitoring_cycle()
-                time.sleep(60) # Il ciclo principale ora gira ogni 60 secondi (gestisce il timing internamente)
+                run_monitoring_cycle(force=False)
+                time.sleep(60) # Il ciclo principale ora gira ogni 60 secondi
             except Exception as e:
-                print(f"Monitor error: {e}")
+                bot_log(f"❌ [SYSTEM] Errore nel thread background: {e}")
                 time.sleep(60)
                 
     t = threading.Thread(target=loop, daemon=True)

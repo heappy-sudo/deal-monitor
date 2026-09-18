@@ -73,6 +73,7 @@ def run_monitoring_cycle(force: bool = False):
             try:
                 last_checked_dt = datetime.strptime(task.last_checked, "%Y-%m-%d %H:%M:%S")
                 if now < last_checked_dt + timedelta(minutes=task.check_interval):
+                    bot_log(f"⏩ Salto '{task.keyword}' (ultimo controllo: {task.last_checked}). Prossimo tra {(last_checked_dt + timedelta(minutes=task.check_interval) - now).seconds // 60} minuti.")
                     continue
             except ValueError:
                 pass
