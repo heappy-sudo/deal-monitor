@@ -61,3 +61,18 @@ def is_listing_seen(listing_id: str) -> bool:
     seen = c.fetchone() is not None
     conn.close()
     return seen
+
+def delete_search(search_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('DELETE FROM searches WHERE id=?', (search_id,))
+    conn.commit()
+    conn.close()
+
+def update_search(search_id: int, target_price: float, tolerance: float, platforms: str):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('UPDATE searches SET target_price=?, tolerance_percent=?, platforms=? WHERE id=?', 
+              (target_price, tolerance, platforms, search_id))
+    conn.commit()
+    conn.close()
