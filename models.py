@@ -18,3 +18,5 @@ class SearchTask(BaseModel):
     tolerance_percent: float  # e.g., 20 for 20%
     platforms: str  # comma separated: "ebay,subito,vinted"
     active: bool = True
+    run_count: int = 0
+    results_found: int = 0

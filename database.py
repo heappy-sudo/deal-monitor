@@ -17,6 +17,16 @@ def init_db():
             active INTEGER DEFAULT 1
         )
     ''')
+    # Migrazione colonne statistiche (ignoriamo l'errore se esistono già)
+    try:
+        c.execute('ALTER TABLE searches ADD COLUMN run_count INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute('ALTER TABLE searches ADD COLUMN results_found INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+
     c.execute('''
         CREATE TABLE IF NOT EXISTS seen_listings (
             id TEXT PRIMARY KEY,
@@ -38,11 +48,19 @@ def add_search(keyword: str, target_price: float, tolerance: float, platforms: s
 def get_active_searches() -> List[SearchTask]:
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT id, keyword, target_price, tolerance_percent, platforms, active FROM searches WHERE active=1')
+    # Aggiungiamo run_count e results_found (potrebbero essere NULL per le ricerche vecchie)
+    c.execute('SELECT id, keyword, target_price, tolerance_percent, platforms, active, COALESCE(run_count, 0), COALESCE(results_found, 0) FROM searches WHERE active=1')
     rows = c.fetchall()
     conn.close()
     
-    return [SearchTask(id=r[0], keyword=r[1], target_price=r[2], tolerance_percent=r[3], platforms=r[4], active=bool(r[5])) for r in rows]
+    return [SearchTask(id=r[0], keyword=r[1], target_price=r[2], tolerance_percent=r[3], platforms=r[4], active=bool(r[5]), run_count=r[6], results_found=r[7]) for r in rows]
+
+def increment_search_stats(search_id: int, new_results: int):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('UPDATE searches SET run_count = COALESCE(run_count, 0) + 1, results_found = COALESCE(results_found, 0) + ? WHERE id=?', (new_results, search_id))
+    conn.commit()
+    conn.close()
 
 def mark_listing_seen(listing_id: str, platform: str):
     conn = sqlite3.connect(DB_PATH)

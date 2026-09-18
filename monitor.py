@@ -46,7 +46,9 @@ def run_monitoring_cycle():
     }
     
     for task in active_searches:
+        total_new_deals_for_task = 0
         platforms = task.platforms.split(',')
+        
         for plat in platforms:
             scraper = scrapers_map.get(plat.strip().lower())
             if not scraper:
@@ -65,9 +67,13 @@ def run_monitoring_cycle():
                         database.mark_listing_seen(listing.id, listing.platform)
                         new_deals += 1
                         
+                total_new_deals_for_task += new_deals
                 print(f"📤 [DEBUG {plat.upper()}] Trovati {new_deals} nuovi deal non ancora visti. (Notifiche inviate)")
             except Exception as e:
                 print(f"❌ [DEBUG {plat.upper()}] Errore durante lo scraping: {e}")
+                
+        # Alla fine delle piattaforme per questo task, aggiorniamo il contatore
+        database.increment_search_stats(task.id, total_new_deals_for_task)
                     
     print("\n🏁 [DEBUG] Ciclo completato. Attesa 5 minuti...\n" + "-"*40)
 

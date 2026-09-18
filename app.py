@@ -61,7 +61,7 @@ def main():
             st.info("Non hai ancora nessuna ricerca attiva. Vai nella scheda 'Aggiungi Nuova'!")
         else:
             st.write("Modifica i valori direttamente nella tabella e spunta la casella per eliminare, poi clicca Salva.")
-            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms, "Elimina 🗑️": False} for s in active_searches]
+            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms, "Cicli": s.run_count, "Annunci Trovati": s.results_found, "Elimina 🗑️": False} for s in active_searches]
             
             edited_data = st.data_editor(
                 table_data, 
@@ -70,7 +70,9 @@ def main():
                 column_config={
                     "ID": None, # Nascondiamo l'ID perché non serve all'utente
                     "Target (€)": st.column_config.NumberColumn(min_value=1.0, step=1.0),
-                    "Tolleranza (%)": st.column_config.NumberColumn(min_value=1, max_value=50, step=1)
+                    "Tolleranza (%)": st.column_config.NumberColumn(min_value=1, max_value=50, step=1),
+                    "Cicli": st.column_config.NumberColumn("Cicli", disabled=True, help="Quante volte il bot ha eseguito la ricerca"),
+                    "Annunci Trovati": st.column_config.NumberColumn("Annunci Trovati", disabled=True, help="Totale annunci inviati per questa ricerca")
                 }
             )
             
