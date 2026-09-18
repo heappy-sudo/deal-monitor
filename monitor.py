@@ -7,7 +7,7 @@ from models import SearchTask, Listing
 
 # CONFIGURA IL TUO BOT TELEGRAM QUI
 TELEGRAM_BOT_TOKEN = "8724609100:AAEQfXpGFmPtn4gSdYPPgtkiqZiwyu4k5Lo"
-TELEGRAM_CHAT_ID = "IL_TUO_CHAT_ID"
+TELEGRAM_CHAT_ID = "8728823654"
 
 def send_telegram_notification(listing: Listing, task: SearchTask):
     if TELEGRAM_BOT_TOKEN == "IL_TUO_TOKEN_BOT" or TELEGRAM_CHAT_ID == "IL_TUO_CHAT_ID":
