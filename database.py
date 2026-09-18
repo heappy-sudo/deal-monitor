@@ -27,7 +27,7 @@ def init_db():
     except sqlite3.OperationalError:
         pass
     try:
-        c.execute('ALTER TABLE searches ADD COLUMN check_interval INTEGER DEFAULT 5')
+        c.execute('ALTER TABLE searches ADD COLUMN check_interval INTEGER DEFAULT 1')
     except sqlite3.OperationalError:
         pass
     try:
@@ -45,7 +45,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def add_search(keyword: str, target_price: float, tolerance: float, platforms: str, check_interval: int = 5):
+def add_search(keyword: str, target_price: float, tolerance: float, platforms: str, check_interval: int = 1):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('INSERT INTO searches (keyword, target_price, tolerance_percent, platforms, check_interval) VALUES (?, ?, ?, ?, ?)',
@@ -57,7 +57,7 @@ def get_active_searches() -> List[SearchTask]:
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     # Aggiungiamo tutte le colonne
-    c.execute('SELECT id, keyword, target_price, tolerance_percent, platforms, active, COALESCE(run_count, 0), COALESCE(results_found, 0), COALESCE(check_interval, 5), last_checked FROM searches WHERE active=1')
+    c.execute('SELECT id, keyword, target_price, tolerance_percent, platforms, active, COALESCE(run_count, 0), COALESCE(results_found, 0), COALESCE(check_interval, 1), last_checked FROM searches WHERE active=1')
     rows = c.fetchall()
     conn.close()
     

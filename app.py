@@ -103,7 +103,7 @@ def main():
             with c1:
                 keyword = st.text_input("Parola Chiave", placeholder="es. iPhone 15 Pro")
                 target_price = st.number_input("Prezzo Target (€)", min_value=1.0, value=500.0, step=10.0)
-                interval = st.number_input("Ogni quanti minuti controllare?", min_value=1, value=5, step=1)
+                interval = st.number_input("Ogni quanti minuti controllare?", min_value=1, value=1, step=1)
             with c2:
                 tolerance = st.slider("Tolleranza / Variazione (%)", 1, 50, 20)
                 platforms = st.multiselect("Piattaforme", ["ebay", "subito", "vinted", "wallapop"], default=["ebay", "subito"])
