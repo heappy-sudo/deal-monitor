@@ -22,6 +22,11 @@ class EbayScraper(BaseScraper):
         try:
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
+            
+            # DEBUG: Salva HTML eBay
+            with open("debug_ebay.html", "w", encoding="utf-8") as f:
+                f.write(response.text)
+                
             soup = BeautifulSoup(response.text, 'html.parser')
             
             items = soup.find_all('div', class_='s-item__info')

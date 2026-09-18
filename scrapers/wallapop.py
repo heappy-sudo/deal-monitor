@@ -17,6 +17,10 @@ class WallapopScraper(BaseScraper):
                 browser = p.chromium.launch(headless=True)
                 page = browser.new_page()
                 page.goto(url, wait_until='networkidle', timeout=15000)
+                time.sleep(2)
+                
+                # DEBUG: Screenshot
+                page.screenshot(path="debug_wallapop.png", full_page=True)
                 
                 # Cerca i link che avvolgono le card dei prodotti
                 items = page.query_selector_all('a.ItemCardList__item')

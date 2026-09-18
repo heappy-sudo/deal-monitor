@@ -138,7 +138,33 @@ def main():
                 st.info("Nessun log disponibile.")
         else:
             st.info("Nessun log disponibile. Premi 'Forza Controllo' per generare i primi log!")
+            
+        st.divider()
+        st.subheader("🕵️ Debug Visivo (Cosa vede il bot)")
+        st.write("Le piattaforme usano sistemi anti-bot. Qui puoi vedere letteralmente gli screenshot della pagina che il bot si ritrova davanti per capire se è bloccato da un Captcha o se c'è un altro errore.")
+        
+        col_img1, col_img2, col_img3 = st.columns(3)
+        with col_img1:
+            if os.path.exists("debug_subito.png"):
+                st.image("debug_subito.png", caption="Screenshot Subito", use_container_width=True)
+            else:
+                st.write("Nessuno screen per Subito")
+        with col_img2:
+            if os.path.exists("debug_vinted.png"):
+                st.image("debug_vinted.png", caption="Screenshot Vinted", use_container_width=True)
+            else:
+                st.write("Nessuno screen per Vinted")
+        with col_img3:
+            if os.path.exists("debug_wallapop.png"):
+                st.image("debug_wallapop.png", caption="Screenshot Wallapop", use_container_width=True)
+            else:
+                st.write("Nessuno screen per Wallapop")
+                
+        if os.path.exists("debug_ebay.html"):
+            with open("debug_ebay.html", "r", encoding="utf-8") as f:
+                html_preview = f.read()
+            st.write("**eBay HTML (prime 500 righe):**")
+            st.code(html_preview[:5000], language="html")
 
 if __name__ == "__main__":
-
     main()

@@ -16,23 +16,30 @@ class SubitoScraper(BaseScraper):
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
                 page = browser.new_page()
-                page.goto(url, wait_until='domcontentloaded')
+                page.goto(url, wait_until='networkidle', timeout=15000)
                 
-                # Wait for listings to load
-                page.wait_for_selector('div.items__item', timeout=5000)
+                # DEBUG: Salviamo sempre uno screenshot per vedere cosa vede il bot
+                page.screenshot(path=f"debug_subito.png", full_page=True)
                 
-                items = page.query_selector_all('div.items__item')
+                items = page.query_selector_all('div[class*="SmallCard-module_card"]')
+                if not items:
+                    # Riprova con un altro selettore generico
+                    items = page.query_selector_all('.items__item')
+                    
                 for item in items:
                     title_elem = item.query_selector('h2')
                     if not title_elem:
                         continue
-                    title = title_elem.inner_text()
-                    
+                        
+                    title = title_elem.inner_text().strip()
                     price_elem = item.query_selector('p[class*="price"]')
                     if not price_elem:
                         continue
                         
                     price_text = price_elem.inner_text().replace('€', '').replace('.', '').replace(',', '.').strip()
+                    if "Spedizione" in price_text:
+                        price_text = price_text.split('\n')[0]
+                        
                     try:
                         price = float(price_text)
                     except ValueError:
@@ -41,7 +48,6 @@ class SubitoScraper(BaseScraper):
                     link_elem = item.query_selector('a')
                     url_item = link_elem.get_attribute('href') if link_elem else ""
                     
-                    # Rimosso is_price_valid per loggare quanti ne trova in totale
                     item_id = url_item.split('-')[-1].split('.')[0] if url_item else title
                     
                     listings.append(Listing(

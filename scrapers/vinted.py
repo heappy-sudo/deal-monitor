@@ -25,6 +25,9 @@ class VintedScraper(BaseScraper):
                 page.goto(url, wait_until='domcontentloaded', timeout=15000)
                 time.sleep(2) # Piccola pausa per far renderizzare la pagina
                 
+                # DEBUG: Screenshot Vinted
+                page.screenshot(path="debug_vinted.png", full_page=True)
+                
                 items = page.query_selector_all('div.feed-grid__item')
                 
                 for item in items:
