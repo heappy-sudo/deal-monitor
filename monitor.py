@@ -52,16 +52,24 @@ def run_monitoring_cycle():
             if not scraper:
                 continue
                 
-            print(f"Cerco '{task.keyword}' su {plat}...")
-            results = scraper.search(task)
-            
-            for listing in results:
-                if not database.is_listing_seen(listing.id):
-                    # Nuovo annuncio!
-                    send_telegram_notification(listing, task)
-                    database.mark_listing_seen(listing.id, listing.platform)
+            print(f"\n⏳ [DEBUG] Avvio ricerca '{task.keyword}' su {plat.upper()}...")
+            try:
+                results = scraper.search(task)
+                print(f"✅ [DEBUG {plat.upper()}] Estratti {len(results)} annunci validi (che rispettano il filtro di prezzo).")
+                
+                new_deals = 0
+                for listing in results:
+                    if not database.is_listing_seen(listing.id):
+                        # Nuovo annuncio!
+                        send_telegram_notification(listing, task)
+                        database.mark_listing_seen(listing.id, listing.platform)
+                        new_deals += 1
+                        
+                print(f"📤 [DEBUG {plat.upper()}] Trovati {new_deals} nuovi deal non ancora visti. (Notifiche inviate)")
+            except Exception as e:
+                print(f"❌ [DEBUG {plat.upper()}] Errore durante lo scraping: {e}")
                     
-    print("Ciclo completato. Attesa prima del prossimo controllo...")
+    print("\n🏁 [DEBUG] Ciclo completato. Attesa 5 minuti...\n" + "-"*40)
 
 if __name__ == "__main__":
     database.init_db()
