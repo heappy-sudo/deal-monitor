@@ -3,6 +3,8 @@ import requests
 import database
 from scrapers.ebay import EbayScraper
 from scrapers.subito import SubitoScraper
+from scrapers.vinted import VintedScraper
+from scrapers.wallapop import WallapopScraper
 from models import SearchTask, Listing
 
 # CONFIGURA IL TUO BOT TELEGRAM QUI
@@ -39,7 +41,8 @@ def run_monitoring_cycle():
     scrapers_map = {
         "ebay": EbayScraper(),
         "subito": SubitoScraper(),
-        # Altri scraper come vinted o wallapop andrebbero qui
+        "vinted": VintedScraper(),
+        "wallapop": WallapopScraper()
     }
     
     for task in active_searches:
