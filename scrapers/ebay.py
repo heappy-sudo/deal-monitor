@@ -51,17 +51,16 @@ class EbayScraper(BaseScraper):
                 except ValueError:
                     continue
                     
-                if self.is_price_valid(price, task):
-                    # Generate a unique ID from the URL or title
-                    item_id = url_item.split('?')[0].split('/')[-1] if url_item else title
-                    
-                    listings.append(Listing(
-                        id=f"ebay_{item_id}",
-                        title=title,
-                        price=price,
-                        url=url_item,
-                        platform=self.platform_name
-                    ))
+                # Rimosso il filtro is_price_valid da qui, lo facciamo nel monitor!
+                item_id = url_item.split('?')[0].split('/')[-1] if url_item else title
+                
+                listings.append(Listing(
+                    id=f"ebay_{item_id}",
+                    title=title,
+                    price=price,
+                    url=url_item,
+                    platform=self.platform_name
+                ))
                     
         except Exception as e:
             print(f"Error scraping eBay: {e}")

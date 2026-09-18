@@ -38,18 +38,19 @@ class SubitoScraper(BaseScraper):
                     except ValueError:
                         continue
                         
-                    if self.is_price_valid(price, task):
-                        link_elem = item.query_selector('a')
-                        url_item = link_elem.get_attribute('href') if link_elem else ""
-                        item_id = url_item.split('/')[-1].split('.')[0] if url_item else title
-                        
-                        listings.append(Listing(
-                            id=f"subito_{item_id}",
-                            title=title,
-                            price=price,
-                            url=url_item,
-                            platform=self.platform_name
-                        ))
+                    link_elem = item.query_selector('a')
+                    url_item = link_elem.get_attribute('href') if link_elem else ""
+                    
+                    # Rimosso is_price_valid per loggare quanti ne trova in totale
+                    item_id = url_item.split('-')[-1].split('.')[0] if url_item else title
+                    
+                    listings.append(Listing(
+                        id=f"subito_{item_id}",
+                        title=title,
+                        price=price,
+                        url=url_item,
+                        platform=self.platform_name
+                    ))
                 
                 browser.close()
         except Exception as e:

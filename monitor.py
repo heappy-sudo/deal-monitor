@@ -87,11 +87,19 @@ def run_monitoring_cycle(force: bool = False):
                 
             bot_log(f"⏳ Cerco '{task.keyword}' su {plat.upper()}...")
             try:
-                results = scraper.search(task)
-                bot_log(f"✅ [{plat.upper()}] Trovati {len(results)} annunci validi per prezzo.")
+                raw_results = scraper.search(task)
+                bot_log(f"🔍 [{plat.upper()}] Trovati {len(raw_results)} annunci in totale sulla pagina.")
+                
+                # Filtriamo i risultati in base al prezzo qui nel monitor
+                valid_results = []
+                for listing in raw_results:
+                    if scraper.is_price_valid(listing.price, task):
+                        valid_results.append(listing)
+                
+                bot_log(f"✅ [{plat.upper()}] Di questi, {len(valid_results)} rientrano nella tua tolleranza di prezzo.")
                 
                 new_deals = 0
-                for listing in results:
+                for listing in valid_results:
                     if not database.is_listing_seen(listing.id):
                         send_telegram_notification(listing, task)
                         database.mark_listing_seen(listing.id, listing.platform)
@@ -101,14 +109,17 @@ def run_monitoring_cycle(force: bool = False):
                 if new_deals > 0:
                     bot_log(f"📤 [{plat.upper()}] Inviate {new_deals} nuove notifiche su Telegram.")
                 else:
-                    bot_log(f"💤 [{plat.upper()}] Nessun deal nuovo da inviare.")
+                    if len(valid_results) > 0:
+                        bot_log(f"💤 [{plat.upper()}] I deal validi erano già stati inviati in passato.")
+                    else:
+                        bot_log(f"💤 [{plat.upper()}] Nessun deal da inviare.")
             except Exception as e:
                 bot_log(f"❌ [{plat.upper()}] Errore durante lo scraping: {e}")
                 
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         database.increment_search_stats(task.id, total_new_deals_for_task, now_str)
                     
-    bot_log("💤 Ciclo completato.")
+    bot_log("💤 Ciclo completato.\n-----------------------")
 
 if __name__ == "__main__":
     database.init_db()

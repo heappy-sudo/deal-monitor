@@ -47,17 +47,16 @@ class VintedScraper(BaseScraper):
                     except ValueError:
                         continue
                         
-                    if self.is_price_valid(price, task):
-                        # L'ID in Vinted è spesso all'inizio dell'URL dell'oggetto
-                        item_id = url_item.split('-')[0].split('/')[-1] if url_item else title
-                        
-                        listings.append(Listing(
-                            id=f"vinted_{item_id}",
-                            title=title,
-                            price=price,
-                            url=url_item,
-                            platform=self.platform_name
-                        ))
+                    # Rimosso is_price_valid, logica centralizzata nel monitor
+                    item_id = url_item.split('-')[0].split('/')[-1] if url_item else title
+                    
+                    listings.append(Listing(
+                        id=f"vinted_{item_id}",
+                        title=title,
+                        price=price,
+                        url=url_item,
+                        platform=self.platform_name
+                    ))
                 browser.close()
         except Exception as e:
             print(f"Error scraping Vinted: {e}")

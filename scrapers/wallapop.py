@@ -36,20 +36,20 @@ class WallapopScraper(BaseScraper):
                     except ValueError:
                         continue
                         
-                    if self.is_price_valid(price, task):
-                        url_item = item.get_attribute('href')
-                        if url_item and not url_item.startswith('http'):
-                            url_item = "https://it.wallapop.com" + url_item
-                            
-                        item_id = url_item.split('-')[-1] if url_item else title
+                    # Rimosso is_price_valid, logica centralizzata nel monitor
+                    url_item = item.get_attribute('href')
+                    if url_item and not url_item.startswith('http'):
+                        url_item = "https://it.wallapop.com" + url_item
                         
-                        listings.append(Listing(
-                            id=f"wallapop_{item_id}",
-                            title=title,
-                            price=price,
-                            url=url_item or url,
-                            platform=self.platform_name
-                        ))
+                    item_id = url_item.split('-')[-1] if url_item else title
+                    
+                    listings.append(Listing(
+                        id=f"wallapop_{item_id}",
+                        title=title,
+                        price=price,
+                        url=url_item or url,
+                        platform=self.platform_name
+                    ))
                 browser.close()
         except Exception as e:
             print(f"Error scraping Wallapop: {e}")
