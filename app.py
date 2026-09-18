@@ -25,7 +25,7 @@ def start_background_monitor():
     return t
 
 def main():
-    st.set_page_config(page_title="Deal Monitor", page_icon="ðŸ›’", layout="wide")
+    st.set_page_config(page_title="Deal Monitor", page_icon="🛒", layout="wide")
     
     # CSS Personalizzato
     st.markdown("""
@@ -36,7 +36,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown('<p class="main-title">ðŸ›’ Marketplace Deal Monitor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-title">🛒 Marketplace Deal Monitor</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-title">Il tuo segugio personale per gli affari online</p>', unsafe_allow_html=True)
     
     database.init_db()
@@ -48,38 +48,38 @@ def main():
     col1, col2, col3 = st.columns(3)
     col1.metric("Ricerche Attive", len(active_searches))
     col2.metric("Piattaforme Supportate", 2) # eBay, Subito
-    col3.metric("Stato Bot", "ðŸŸ¢ Online")
+    col3.metric("Stato Bot", "🟢 Online")
     
     st.divider()
     
-    # Layout a schede (Tabs) per un'interfaccia piÃ¹ pulita
-    tab1, tab2 = st.tabs(["ðŸ“‹ Le tue Ricerche", "âž• Aggiungi Nuova"])
+    # Layout a schede (Tabs) per un'interfaccia più pulita
+    tab1, tab2 = st.tabs(["📋 Le tue Ricerche", "➕ Aggiungi Nuova"])
     
     with tab1:
         st.subheader("Gestione Ricerche")
         if not active_searches:
             st.info("Non hai ancora nessuna ricerca attiva. Vai nella scheda 'Aggiungi Nuova'!")
         else:
-            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (â‚¬)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms} for s in active_searches]
+            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms} for s in active_searches]
             st.dataframe(table_data, width="stretch")
             
-            st.markdown("### âš™ï¸ Azioni")
-            action = st.radio("Cosa vuoi fare?", ["Nessuna", "âœï¸ Modifica", "ðŸ—‘ï¸ Elimina"], horizontal=True, label_visibility="collapsed")
+            st.markdown("### ⚙️ Azioni")
+            action = st.radio("Cosa vuoi fare?", ["Nessuna", "✏️ Modifica", "🗑️ Elimina"], horizontal=True, label_visibility="collapsed")
             
-            if action == "ðŸ—‘ï¸ Elimina":
+            if action == "🗑️ Elimina":
                 del_id = st.selectbox("Seleziona ID da eliminare:", [s.id for s in active_searches])
                 if st.button("Conferma Eliminazione", type="primary"):
                     database.delete_search(del_id)
                     st.success(f"Ricerca eliminata!")
                     st.rerun()
                     
-            elif action == "âœï¸ Modifica":
+            elif action == "✏️ Modifica":
                 mod_id = st.selectbox("Seleziona ID da modificare:", [s.id for s in active_searches])
                 current_task = next((s for s in active_searches if s.id == mod_id), None)
                 if current_task:
                     with st.expander("Modifica parametri", expanded=True):
                         with st.form("edit_form"):
-                            nt = st.number_input("Prezzo Target (â‚¬)", value=float(current_task.target_price))
+                            nt = st.number_input("Prezzo Target (€)", value=float(current_task.target_price))
                             ntol = st.slider("Tolleranza (%)", 1, 50, value=int(current_task.tolerance_percent))
                             cplats = current_task.platforms.split(',')
                             nplats = st.multiselect("Piattaforme", ["ebay", "subito", "vinted", "wallapop"], default=cplats)
@@ -97,19 +97,19 @@ def main():
             c1, c2 = st.columns(2)
             with c1:
                 keyword = st.text_input("Parola Chiave", placeholder="es. iPhone 15 Pro")
-                target_price = st.number_input("Prezzo Target (â‚¬)", min_value=1.0, value=500.0, step=10.0)
+                target_price = st.number_input("Prezzo Target (€)", min_value=1.0, value=500.0, step=10.0)
             with c2:
                 tolerance = st.slider("Tolleranza / Variazione (%)", 1, 50, 20)
                 platforms = st.multiselect("Piattaforme", ["ebay", "subito", "vinted", "wallapop"], default=["ebay", "subito"])
                 
-            if st.form_submit_button("ðŸš€ Avvia Ricerca", type="primary"):
+            if st.form_submit_button("🚀 Avvia Ricerca", type="primary"):
                 if keyword and platforms:
                     database.add_search(keyword, target_price, float(tolerance), ",".join(platforms))
-                    st.success("Ricerca aggiunta! Il bot Ã¨ giÃ  al lavoro in background.")
+                    st.success("Ricerca aggiunta! Il bot è già al lavoro in background.")
                     st.rerun()
                 else:
                     st.error("Compila tutti i campi.")
 
 if __name__ == "__main__":
-    main()
 
+    main()
