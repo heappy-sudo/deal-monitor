@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import database
 import threading
 import time
@@ -60,36 +60,29 @@ def main():
         if not active_searches:
             st.info("Non hai ancora nessuna ricerca attiva. Vai nella scheda 'Aggiungi Nuova'!")
         else:
-            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms} for s in active_searches]
-            st.dataframe(table_data, width="stretch")
+            st.write("Modifica i valori direttamente nella tabella e spunta la casella per eliminare, poi clicca Salva.")
+            table_data = [{"ID": s.id, "Parola Chiave": s.keyword, "Target (€)": s.target_price, "Tolleranza (%)": s.tolerance_percent, "Piattaforme": s.platforms, "Elimina 🗑️": False} for s in active_searches]
             
-            st.markdown("### ⚙️ Azioni")
-            action = st.radio("Cosa vuoi fare?", ["Nessuna", "✏️ Modifica", "🗑️ Elimina"], horizontal=True, label_visibility="collapsed")
+            edited_data = st.data_editor(
+                table_data, 
+                width="stretch", 
+                hide_index=True,
+                column_config={
+                    "ID": None, # Nascondiamo l'ID perché non serve all'utente
+                    "Target (€)": st.column_config.NumberColumn(min_value=1.0, step=1.0),
+                    "Tolleranza (%)": st.column_config.NumberColumn(min_value=1, max_value=50, step=1)
+                }
+            )
             
-            if action == "🗑️ Elimina":
-                del_id = st.selectbox("Seleziona ID da eliminare:", [s.id for s in active_searches])
-                if st.button("Conferma Eliminazione", type="primary"):
-                    database.delete_search(del_id)
-                    st.success(f"Ricerca eliminata!")
-                    st.rerun()
-                    
-            elif action == "✏️ Modifica":
-                mod_id = st.selectbox("Seleziona ID da modificare:", [s.id for s in active_searches])
-                current_task = next((s for s in active_searches if s.id == mod_id), None)
-                if current_task:
-                    with st.expander("Modifica parametri", expanded=True):
-                        with st.form("edit_form"):
-                            nt = st.number_input("Prezzo Target (€)", value=float(current_task.target_price))
-                            ntol = st.slider("Tolleranza (%)", 1, 50, value=int(current_task.tolerance_percent))
-                            cplats = current_task.platforms.split(',')
-                            nplats = st.multiselect("Piattaforme", ["ebay", "subito", "vinted", "wallapop"], default=cplats)
-                            if st.form_submit_button("Salva Modifiche"):
-                                if nplats:
-                                    database.update_search(mod_id, nt, float(ntol), ",".join(nplats))
-                                    st.success("Aggiornato!")
-                                    st.rerun()
-                                else:
-                                    st.error("Seleziona una piattaforma.")
+            if st.button("💾 Salva Modifiche", type="primary"):
+                for row in edited_data:
+                    if row["Elimina 🗑️"]:
+                        database.delete_search(row["ID"])
+                    else:
+                        database.update_search(row["ID"], row["Target (€)"], row["Tolleranza (%)"], row["Piattaforme"])
+                st.success("Modifiche salvate con successo!")
+                time.sleep(1)
+                st.rerun()
 
     with tab2:
         st.subheader("Nuovo Incarico")
